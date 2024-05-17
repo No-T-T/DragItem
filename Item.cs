@@ -1,45 +1,55 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
 public class Item : MonoBehaviour, IBeginDragHandler, IDragHandler
 {
     Vector3 offset;
-    Vector3 worldPos;
-    public Canvas canvas;
+    Vector2 worldPos;
+    Vector3 newPos;
+    Canvas canvas;
+    bool inTrans;
     public void OnBeginDrag(PointerEventData eventData)
     {
-        worldPos = eventData.position;
         switch (canvas.renderMode)
         {
             case RenderMode.ScreenSpaceOverlay:
+                worldPos = eventData.position;
+                inTrans = true;
                 break;
             case RenderMode.ScreenSpaceCamera:
             case RenderMode.WorldSpace:
-                worldPos = canvas.worldCamera.ScreenToWorldPoint(new Vector3(worldPos.x, worldPos.y, transform.position.z));
+                inTrans = RectTransformUtility.ScreenPointToLocalPointInRectangle(transform.parent.GetComponent<RectTransform>(),
+                  eventData.position, canvas.worldCamera, out worldPos);
                 break;
             default:
                 break;
         }
-        offset = worldPos - transform.position;
+        if (!inTrans) return;
+        newPos = worldPos;
+        newPos.z = transform.localPosition.z;
+        offset = newPos - transform.localPosition;
     }
 
     public void OnDrag(PointerEventData eventData)
     {
-        worldPos = eventData.position;
         switch (canvas.renderMode)
         {
             case RenderMode.ScreenSpaceOverlay:
+                worldPos = eventData.position;
+                inTrans = true;
                 break;
             case RenderMode.ScreenSpaceCamera:
             case RenderMode.WorldSpace:
-                worldPos = canvas.worldCamera.ScreenToWorldPoint(new Vector3(worldPos.x, worldPos.y, transform.position.z));
+                inTrans = RectTransformUtility.ScreenPointToLocalPointInRectangle(transform.parent.GetComponent<RectTransform>(),
+                  eventData.position, canvas.worldCamera, out worldPos);
                 break;
             default:
                 break;
         }
-        transform.position = worldPos - offset;
+        if (!inTrans) return;
+        newPos = worldPos;
+        newPos.z = transform.localPosition.z;
+        transform.localPosition = newPos - offset;
     }
 
     // Start is called before the first frame update
